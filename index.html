@@ -572,10 +572,40 @@ const DashboardView = ({ isAdmin, currentUser, onNavigate }) => {
                     <p className="text-sm text-gray-500">{(consulta.data || '').split('-').reverse().join('/')} - {consulta.observacoes || 'Consulta'}</p>
                   </div>
                 </div>
-                <div>
+                <div className="flex items-center gap-2">
                   <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
                     Confirmado
                   </span>
+                  {isAdmin && (
+                    <button
+                      onClick={async () => {
+                        const dataFormatada = (consulta.data || '').split('-').reverse().join('/');
+                        const confirmed = await showConfirm({
+                          title: "Encerrar Consulta",
+                          message: `Deseja realmente encerrar a consulta com "${consulta.pacienteNome || 'Paciente'}" do dia ${dataFormatada} às ${consulta.hora}?`,
+                          confirmText: "Sim, Encerrar",
+                          cancelText: "Cancelar",
+                          variant: "primary"
+                        });
+                        if (!confirmed) return;
+                        try {
+                          await update(ref(db, `consultas/${consulta.id}`), {
+                            status: 'Encerrada',
+                            encerradaEm: serverTimestamp()
+                          });
+                          notify.success("Consulta encerrada com sucesso!", "Consulta Encerrada");
+                        } catch (err) {
+                          console.error(err);
+                          notify.error("Erro ao encerrar consulta.");
+                        }
+                      }}
+                      className="bg-slate-700 hover:bg-slate-800 text-white px-3 py-1 rounded-lg text-xs font-medium transition-colors flex items-center shadow-sm"
+                      title="Encerrar consulta aberta"
+                    >
+                      <CheckCircle2 className="w-3.5 h-3.5 mr-1 text-green-400" />
+                      Encerrar
+                    </button>
+                  )}
                 </div>
               </div>
             ))
@@ -5347,34 +5377,53 @@ const PatientScheduleView = ({ currentUser }) => {
           <div className="space-y-3">
             {loading ? <p className="text-sm text-gray-500">Carregando...</p> : 
              consultas.length === 0 ? <p className="text-sm text-gray-500">Nenhuma solicitação.</p> :
-             consultas.map(c => (
-              <div key={c.id} className={`border rounded-lg p-4 flex flex-col gap-2 ${c.status === 'Aprovado' ? 'border-green-200 bg-green-50' : 'border-yellow-200 bg-yellow-50'}`}>
-                <div className="flex items-start gap-3">
-                  <CalendarDays className={`w-5 h-5 mt-0.5 ${c.status === 'Aprovado' ? 'text-green-600' : 'text-yellow-600'}`} />
-                  <div className="flex-1">
-                    <p className={`font-semibold ${c.status === 'Aprovado' ? 'text-green-800' : 'text-yellow-800'}`}>
-                      {(c.data || '').split('-').reverse().join('/')} às {c.hora}
-                    </p>
-                    {c.observacoes && <p className="text-sm text-gray-600 mt-1">Obs: {c.observacoes}</p>}
-                    <div className="flex items-center gap-3 mt-2">
-                      <span className={`inline-block text-xs font-bold px-2 py-1 rounded-full border ${
-                        c.status === 'Aprovado' ? 'text-green-600 bg-green-100 border-green-200' : 'text-yellow-600 bg-yellow-100 border-yellow-200'
+             consultas.map(c => {
+               const isAprovada = c.status === 'Aprovado';
+               const isEncerrada = c.status === 'Encerrada';
+
+               return (
+                <div key={c.id} className={`border rounded-lg p-4 flex flex-col gap-2 ${
+                  isAprovada ? 'border-green-200 bg-green-50' : 
+                  isEncerrada ? 'border-gray-200 bg-gray-50' : 
+                  'border-yellow-200 bg-yellow-50'
+                }`}>
+                  <div className="flex items-start gap-3">
+                    <CalendarDays className={`w-5 h-5 mt-0.5 ${
+                      isAprovada ? 'text-green-600' : 
+                      isEncerrada ? 'text-gray-500' : 
+                      'text-yellow-600'
+                    }`} />
+                    <div className="flex-1">
+                      <p className={`font-semibold ${
+                        isAprovada ? 'text-green-800' : 
+                        isEncerrada ? 'text-gray-700' : 
+                        'text-yellow-800'
                       }`}>
-                        {c.status === 'Aprovado' ? 'Aprovado' : 'Aguardando Confirmação'}
-                      </span>
-                      {c.status === 'Aprovado' && currentUser.onOpenConsultaChat && (
-                        <button 
-                          onClick={() => currentUser.onOpenConsultaChat(c)}
-                          className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs font-medium transition-colors flex items-center"
-                        >
-                          <MessageCircle className="w-3 h-3 mr-1" /> Chat
-                        </button>
-                      )}
+                        {(c.data || '').split('-').reverse().join('/')} às {c.hora}
+                      </p>
+                      {c.observacoes && <p className="text-sm text-gray-600 mt-1">Obs: {c.observacoes}</p>}
+                      <div className="flex items-center gap-3 mt-2">
+                        <span className={`inline-block text-xs font-bold px-2 py-1 rounded-full border ${
+                          isAprovada ? 'text-green-600 bg-green-100 border-green-200' : 
+                          isEncerrada ? 'text-gray-600 bg-gray-100 border-gray-300' : 
+                          'text-yellow-600 bg-yellow-100 border-yellow-200'
+                        }`}>
+                          {isAprovada ? 'Aprovado' : isEncerrada ? 'Encerrada' : 'Aguardando Confirmação'}
+                        </span>
+                        {(isAprovada || isEncerrada) && currentUser.onOpenConsultaChat && (
+                          <button 
+                            onClick={() => currentUser.onOpenConsultaChat(c)}
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs font-medium transition-colors flex items-center"
+                          >
+                            <MessageCircle className="w-3 h-3 mr-1" /> {isEncerrada ? 'Ver Histórico' : 'Chat'}
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-             ))
+               );
+             })
             }
           </div>
         </div>
@@ -6349,6 +6398,7 @@ const PatientRoutineView = ({ currentUser, onNavigate, readOnly = false, pacient
 const AdminConsultasView = ({ currentUser, onOpenConsultaChat }) => {
   const [consultas, setConsultas] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [filtroStatus, setFiltroStatus] = useState('todas'); // 'todas' | 'abertas' | 'pendentes' | 'encerradas'
 
   React.useEffect(() => {
     const q = query(ref(db, 'consultas'));
@@ -6374,49 +6424,182 @@ const AdminConsultasView = ({ currentUser, onOpenConsultaChat }) => {
     }
   };
 
+  const handleEncerrar = async (consulta) => {
+    const dataFormatada = (consulta.data || '').split('-').reverse().join('/');
+    const confirmed = await showConfirm({
+      title: "Encerrar Consulta",
+      message: `Deseja realmente encerrar a consulta com "${consulta.pacienteNome || 'Paciente'}" agendada para ${dataFormatada} às ${consulta.hora}? A consulta será marcada como concluída e sairá das próximas consultas ativas.`,
+      confirmText: "Sim, Encerrar Consulta",
+      cancelText: "Cancelar",
+      variant: "primary"
+    });
+
+    if (!confirmed) return;
+
+    try {
+      await update(ref(db, `consultas/${consulta.id}`), {
+        status: 'Encerrada',
+        encerradaEm: serverTimestamp()
+      });
+      notify.success("Consulta encerrada com sucesso!", "Consulta Encerrada");
+    } catch (err) {
+      console.error(err);
+      notify.error("Erro ao encerrar consulta.");
+    }
+  };
+
+  const totalTodas = consultas.length;
+  const totalAbertas = consultas.filter(c => c.status === 'Aprovado').length;
+  const totalPendentes = consultas.filter(c => c.status === 'Pendente').length;
+  const totalEncerradas = consultas.filter(c => c.status === 'Encerrada').length;
+
+  const consultasFiltradas = consultas.filter(c => {
+    if (filtroStatus === 'abertas') return c.status === 'Aprovado';
+    if (filtroStatus === 'pendentes') return c.status === 'Pendente';
+    if (filtroStatus === 'encerradas') return c.status === 'Encerrada';
+    return true;
+  });
+
   return (
     <div className="p-6">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">Requisições de Consultas</h2>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-800">Gerenciamento de Consultas</h2>
+          <p className="text-sm text-gray-500">Acompanhe, aprove e encerre as consultas com seus pacientes</p>
+        </div>
+        
+        {/* Filtros por Status */}
+        <div className="flex items-center gap-1.5 bg-gray-100 p-1 rounded-xl self-stretch sm:self-auto overflow-x-auto">
+          <button
+            onClick={() => setFiltroStatus('todas')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-1.5 ${
+              filtroStatus === 'todas'
+                ? 'bg-white text-gray-800 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            Todas
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-gray-200 text-gray-700">{totalTodas}</span>
+          </button>
+          <button
+            onClick={() => setFiltroStatus('abertas')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-1.5 ${
+              filtroStatus === 'abertas'
+                ? 'bg-white text-green-700 shadow-sm'
+                : 'text-gray-600 hover:text-green-700'
+            }`}
+          >
+            <span className="w-2 h-2 rounded-full bg-green-500"></span>
+            Abertas
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-green-100 text-green-800">{totalAbertas}</span>
+          </button>
+          <button
+            onClick={() => setFiltroStatus('pendentes')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-1.5 ${
+              filtroStatus === 'pendentes'
+                ? 'bg-white text-yellow-700 shadow-sm'
+                : 'text-gray-600 hover:text-yellow-700'
+            }`}
+          >
+            <span className="w-2 h-2 rounded-full bg-yellow-500"></span>
+            Pendentes
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-yellow-100 text-yellow-800">{totalPendentes}</span>
+          </button>
+          <button
+            onClick={() => setFiltroStatus('encerradas')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-1.5 ${
+              filtroStatus === 'encerradas'
+                ? 'bg-white text-slate-700 shadow-sm'
+                : 'text-gray-600 hover:text-slate-700'
+            }`}
+          >
+            <CheckCircle2 className="w-3 h-3 text-slate-500" />
+            Encerradas
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-gray-200 text-gray-700">{totalEncerradas}</span>
+          </button>
+        </div>
+      </div>
+
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         {loading ? (
           <div className="p-10 flex flex-col items-center justify-center text-green-600">
             <Loader2 className="w-8 h-8 animate-spin mb-2" />
             <p className="text-gray-500 font-medium">Carregando consultas...</p>
           </div>
-        ) : consultas.length === 0 ? (
+        ) : consultasFiltradas.length === 0 ? (
           <div className="p-10 text-center text-gray-500">
             <CalendarDays className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-            <p>Nenhuma requisição de consulta encontrada.</p>
+            <p className="font-medium text-gray-700">Nenhuma consulta encontrada.</p>
+            <p className="text-xs text-gray-400 mt-1">
+              {filtroStatus !== 'todas' ? 'Tente alternar o filtro de status para ver outros registros.' : 'Nenhuma solicitação ou agendamento registrado até o momento.'}
+            </p>
           </div>
         ) : (
           <div className="divide-y divide-gray-100">
-            {consultas.map(c => (
-              <div key={c.id} className={`p-6 flex flex-col md:flex-row justify-between items-start md:items-center hover:bg-gray-50 transition-colors ${c.status === 'Aprovado' ? 'bg-green-50/30' : ''}`}>
-                <div className="mb-4 md:mb-0">
-                  <h4 className="text-lg font-semibold text-gray-800">{c.pacienteNome || 'Paciente'}</h4>
-                  <div className="flex items-center text-gray-600 mt-1 gap-4">
-                    <span className="flex items-center"><CalendarDays className="w-4 h-4 mr-1"/> {(c.data || '').split('-').reverse().join('/')}</span>
-                    <span className="flex items-center"><Clock className="w-4 h-4 mr-1"/> {c.hora}</span>
+            {consultasFiltradas.map(c => {
+              const isAberta = c.status === 'Aprovado';
+              const isEncerrada = c.status === 'Encerrada';
+              const isPendente = c.status === 'Pendente';
+
+              return (
+                <div key={c.id} className={`p-6 flex flex-col md:flex-row justify-between items-start md:items-center hover:bg-gray-50 transition-colors ${
+                  isAberta ? 'bg-green-50/20' : isEncerrada ? 'bg-gray-50/50 opacity-90' : ''
+                }`}>
+                  <div className="mb-4 md:mb-0">
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-lg font-semibold text-gray-800">{c.pacienteNome || 'Paciente'}</h4>
+                      {isAberta && (
+                        <span className="bg-green-100 text-green-700 text-[11px] font-bold px-2 py-0.5 rounded-full border border-green-200 flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span> Aberta
+                        </span>
+                      )}
+                      {isEncerrada && (
+                        <span className="bg-gray-100 text-gray-600 text-[11px] font-semibold px-2 py-0.5 rounded-full border border-gray-300 flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3 text-gray-500" /> Concluída
+                        </span>
+                      )}
+                      {isPendente && (
+                        <span className="bg-yellow-100 text-yellow-700 text-[11px] font-bold px-2 py-0.5 rounded-full border border-yellow-200">
+                          Pendente
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center text-gray-600 mt-1.5 gap-4 text-sm">
+                      <span className="flex items-center"><CalendarDays className="w-4 h-4 mr-1 text-gray-400"/> {(c.data || '').split('-').reverse().join('/')}</span>
+                      <span className="flex items-center"><Clock className="w-4 h-4 mr-1 text-gray-400"/> {c.hora}</span>
+                    </div>
+                    {c.observacoes && <p className="text-sm text-gray-500 mt-2 italic">"{c.observacoes}"</p>}
                   </div>
-                  {c.observacoes && <p className="text-sm text-gray-500 mt-2 italic">"{c.observacoes}"</p>}
+
+                  <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
+                    {isPendente && (
+                      <button onClick={() => handleAprovar(c.id)} className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center shadow-sm">
+                        <Check className="w-4 h-4 mr-1" /> Aprovar
+                      </button>
+                    )}
+                    {isAberta && (
+                      <>
+                        <button onClick={() => onOpenConsultaChat(c)} className="bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-2 rounded-lg text-sm font-medium transition-colors flex items-center shadow-sm">
+                          <MessageCircle className="w-4 h-4 mr-1.5" /> Chat da Consulta
+                        </button>
+                        <button 
+                          onClick={() => handleEncerrar(c)} 
+                          className="bg-slate-700 hover:bg-slate-800 text-white px-3.5 py-2 rounded-lg text-sm font-medium transition-colors flex items-center shadow-sm hover:shadow"
+                          title="Encerrar consulta aberta"
+                        >
+                          <CheckCircle2 className="w-4 h-4 mr-1.5 text-green-400" /> Encerrar Consulta
+                        </button>
+                      </>
+                    )}
+                    {isEncerrada && (
+                      <button onClick={() => onOpenConsultaChat(c)} className="bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300 px-3.5 py-2 rounded-lg text-sm font-medium transition-colors flex items-center">
+                        <MessageCircle className="w-4 h-4 mr-1.5 text-gray-500" /> Ver Histórico
+                      </button>
+                    )}
+                  </div>
                 </div>
-                <div className="flex items-center gap-3 w-full md:w-auto">
-                  <span className={`px-3 py-1 rounded-full text-xs font-bold border ${c.status === 'Aprovado' ? 'bg-green-100 text-green-700 border-green-200' : 'bg-yellow-100 text-yellow-700 border-yellow-200'}`}>
-                    {c.status}
-                  </span>
-                  {c.status === 'Pendente' && (
-                    <button onClick={() => handleAprovar(c.id)} className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center">
-                      <Check className="w-4 h-4 mr-1" /> Aprovar
-                    </button>
-                  )}
-                  {c.status === 'Aprovado' && (
-                    <button onClick={() => onOpenConsultaChat(c)} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center">
-                      <MessageCircle className="w-4 h-4 mr-1" /> Chat da Consulta
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
@@ -6956,13 +7139,51 @@ function App() {
     if (chatConsultaAtiva) {
       return (
         <div className="p-6">
-          <button 
-            onClick={() => setChatConsultaAtiva(null)}
-            className="mb-4 flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors text-sm font-medium"
-          >
-            <X className="w-4 h-4" />
-            Voltar para {isAdmin ? 'Consultas' : 'Agendamentos'}
-          </button>
+          <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <button 
+              onClick={() => setChatConsultaAtiva(null)}
+              className="flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors text-sm font-medium"
+            >
+              <X className="w-4 h-4" />
+              Voltar para {isAdmin ? 'Consultas' : 'Agendamentos'}
+            </button>
+            {isAdmin && (
+              chatConsultaAtiva.status === 'Aprovado' ? (
+                <button
+                  onClick={async () => {
+                    const dataFormatada = (chatConsultaAtiva.data || '').split('-').reverse().join('/');
+                    const confirmed = await showConfirm({
+                      title: "Encerrar Consulta",
+                      message: `Deseja realmente encerrar a consulta com "${chatConsultaAtiva.pacienteNome || 'Paciente'}" do dia ${dataFormatada} às ${chatConsultaAtiva.hora}? A consulta será concluída e sairá das próximas consultas ativas.`,
+                      confirmText: "Sim, Encerrar Consulta",
+                      cancelText: "Cancelar",
+                      variant: "primary"
+                    });
+                    if (!confirmed) return;
+                    try {
+                      await update(ref(db, `consultas/${chatConsultaAtiva.id}`), {
+                        status: 'Encerrada',
+                        encerradaEm: serverTimestamp()
+                      });
+                      setChatConsultaAtiva(prev => prev ? ({ ...prev, status: 'Encerrada' }) : null);
+                      notify.success("Consulta encerrada com sucesso!", "Consulta Encerrada");
+                    } catch(err) {
+                      console.error(err);
+                      notify.error("Erro ao encerrar consulta.");
+                    }
+                  }}
+                  className="bg-slate-700 hover:bg-slate-800 text-white px-3.5 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center shadow-sm w-fit"
+                >
+                  <CheckCircle2 className="w-4 h-4 mr-1.5 text-green-400" />
+                  Encerrar Consulta
+                </button>
+              ) : chatConsultaAtiva.status === 'Encerrada' ? (
+                <span className="px-3 py-1 rounded-full text-xs font-bold border bg-gray-100 text-gray-700 border-gray-300 flex items-center gap-1.5 w-fit">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-gray-500" /> Consulta Encerrada
+                </span>
+              ) : null
+            )}
+          </div>
           <ChatComponent
             currentUserId={user.uid}
             otherUserId={isAdmin ? chatConsultaAtiva.pacienteId : 'admin_nutri'} // Para simplificar
@@ -6970,7 +7191,7 @@ function App() {
             otherUserInitials={isAdmin ? (chatConsultaAtiva.pacienteNome || 'P').charAt(0).toUpperCase() : 'NC'}
             isAdmin={isAdmin}
             customChatId={`consulta_${chatConsultaAtiva.id}`}
-            isConsultaInfo={`${chatConsultaAtiva.data.split('-').reverse().join('/')} às ${chatConsultaAtiva.hora} ${chatConsultaAtiva.observacoes ? '- '+chatConsultaAtiva.observacoes : ''}`}
+            isConsultaInfo={`${chatConsultaAtiva.data.split('-').reverse().join('/')} às ${chatConsultaAtiva.hora} ${chatConsultaAtiva.observacoes ? '- '+chatConsultaAtiva.observacoes : ''}${chatConsultaAtiva.status === 'Encerrada' ? ' (Encerrada)' : ''}`}
           />
         </div>
       );
