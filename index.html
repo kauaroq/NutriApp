@@ -5,7 +5,27 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NutriApp</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'Inter', 'system-ui', '-apple-system', 'sans-serif'],
+          },
+          boxShadow: {
+            'xs': '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+            'subtle': '0 2px 8px -2px rgba(0, 0, 0, 0.05), 0 1px 4px -1px rgba(0, 0, 0, 0.03)',
+            'card': '0 4px 20px -2px rgba(0, 0, 0, 0.05)',
+            'glow-emerald': '0 0 20px -3px rgba(16, 185, 129, 0.25)',
+          }
+        }
+      }
+    };
+  </script>
   
   <!-- SheetJS para geração de planilhas Excel (.xlsx) -->
   <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
@@ -29,7 +49,47 @@
     }
   </script>
   <style>
-    body { font-family: 'Inter', sans-serif; }
+    body { 
+      font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
+    }
+    
+    /* Scrollbars elegantes e minimalistas */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+    
+    /* Seleção de texto moderna */
+    ::selection {
+      background-color: #a7f3d0;
+      color: #064e3b;
+    }
+
+    /* Efeitos de Vidro Fosco (Glassmorphism) */
+    .glass-header {
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    .glass-card {
+      background: rgba(255, 255, 255, 0.94);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
     @keyframes toastSlideIn {
       from {
         opacity: 0;
@@ -479,45 +539,67 @@ const DashboardView = ({ isAdmin, currentUser, onNavigate }) => {
     };
   }, [isAdmin, currentUser]);
 
+  const dataHojeFormatada = new Intl.DateTimeFormat('pt-BR', { 
+    weekday: 'long', 
+    day: 'numeric', 
+    month: 'long' 
+  }).format(new Date());
+
   const stats = [
-    { label: 'Consultas Hoje', value: consultasDeHojeCount.toString(), icon: Calendar, color: 'text-green-600', bg: 'bg-green-100' },
-    { label: 'Planos Ativos', value: planosAtivosCount.toString(), icon: Utensils, color: 'text-orange-600', bg: 'bg-orange-100' },
+    { label: 'Consultas Hoje', value: consultasDeHojeCount.toString(), icon: Calendar, color: 'text-emerald-700', bg: 'bg-emerald-100', border: 'border-emerald-200/60' },
+    { label: 'Planos Ativos', value: planosAtivosCount.toString(), icon: Utensils, color: 'text-amber-700', bg: 'bg-amber-100', border: 'border-amber-200/60' },
     ...(!isAdmin ? [{
       label: 'Rotina Hoje',
       value: routineStats.total > 0 ? `${routineStats.concluidos}/${routineStats.total} (${routineStats.percent}%)` : 'Configurar',
       icon: ListTodo,
-      color: 'text-teal-600',
+      color: 'text-teal-700',
       bg: 'bg-teal-100',
+      border: 'border-teal-200/60',
       action: () => onNavigate && onNavigate('rotina')
     }] : [])
   ];
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-800">Visão Geral</h2>
+    <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-2 border-b border-slate-200/60">
+        <div>
+          <div className="flex items-center gap-2">
+            <h2 className="text-2xl font-bold text-slate-800 tracking-tight">Visão Geral</h2>
+            <span className="hidden sm:inline-block text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 capitalize">
+              {dataHojeFormatada}
+            </span>
+          </div>
+          <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+            {isAdmin 
+              ? 'Acompanhe métricas, agendamentos e o atendimento aos seus pacientes.' 
+              : 'Acompanhe suas consultas agendadas, plano alimentar e metas da sua rotina.'}
+          </p>
+        </div>
         {isAdmin && (
-          <button className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center shadow transition-colors" onClick={() => notify.info('Vá para a aba Consultas para gerenciar os agendamentos.', 'Agendamentos')}>
-            <Plus className="w-5 h-5 mr-2" />
+          <button 
+            className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center shadow-xs hover:shadow-md transition-all self-stretch sm:self-auto justify-center cursor-pointer" 
+            onClick={() => notify.info('Acesse a aba Consultas para gerenciar agendamentos e solicitações pendentes.', 'Agendamentos')}
+          >
+            <Plus className="w-4 h-4 mr-1.5" />
             Nova Consulta
           </button>
         )}
       </div>
 
       {/* Cards de Estatísticas */}
-      <div className={`grid grid-cols-1 ${!isAdmin ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-6`}>
+      <div className={`grid grid-cols-1 ${!isAdmin ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-4 sm:gap-6`}>
         {stats.map((stat, index) => (
           <div 
             key={index} 
             onClick={stat.action}
-            className={`bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4 ${stat.action ? 'cursor-pointer hover:border-teal-300 hover:shadow-md transition-all' : ''}`}
+            className={`bg-white p-5 sm:p-6 rounded-2xl shadow-xs border ${stat.border || 'border-slate-200/70'} flex items-center space-x-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${stat.action ? 'cursor-pointer hover:border-teal-400' : ''}`}
           >
-            <div className={`p-3 rounded-full ${stat.bg} ${stat.color}`}>
+            <div className={`p-3.5 rounded-2xl ${stat.bg} ${stat.color} shadow-xs shrink-0`}>
               <stat.icon className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-sm text-gray-500 font-medium">{stat.label}</p>
-              <h3 className="text-2xl font-bold text-gray-800">{stat.value}</h3>
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-400">{stat.label}</p>
+              <h3 className="text-2xl font-extrabold text-slate-800 mt-0.5">{stat.value}</h3>
             </div>
           </div>
         ))}
@@ -525,22 +607,22 @@ const DashboardView = ({ isAdmin, currentUser, onNavigate }) => {
 
       {/* Banner de Rotina para o Paciente */}
       {!isAdmin && (
-        <div className="bg-gradient-to-r from-teal-600 to-green-600 rounded-2xl p-6 text-white shadow-md relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div className="space-y-1 z-10">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 text-xs font-semibold backdrop-blur-sm">
-              <CheckCircle2 className="w-3.5 h-3.5" /> Checklist Diário & Avisos
+        <div className="bg-gradient-to-r from-teal-600 to-emerald-600 rounded-3xl p-6 text-white shadow-md relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
+          <div className="space-y-1.5 z-10 max-w-xl">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 text-xs font-bold backdrop-blur-md">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-200" /> Checklist Diário & Avisos
             </div>
-            <h3 className="text-xl font-bold">Sua Rotina Diária & Metas</h3>
-            <p className="text-sm text-teal-100">
+            <h3 className="text-xl sm:text-2xl font-bold tracking-tight">Sua Rotina Diária & Metas</h3>
+            <p className="text-xs sm:text-sm text-teal-100 leading-relaxed">
               {routineStats.total === 0 
                 ? "Monte sua rotina personalizada de hidratação, refeições e hábitos com avisos no horário certo!" 
-                : `${routineStats.concluidos} de ${routineStats.total} hábitos concluídos hoje (${routineStats.percent}%). Continue firme!`}
+                : `${routineStats.concluidos} de ${routineStats.total} hábitos concluídos hoje (${routineStats.percent}%). Continue com foco!`}
             </p>
           </div>
           <div className="flex items-center gap-3 w-full md:w-auto z-10">
             <button 
               onClick={() => onNavigate && onNavigate('rotina')}
-              className="bg-white text-teal-800 hover:bg-teal-50 px-5 py-2.5 rounded-xl font-bold text-sm shadow transition-all flex items-center gap-2 whitespace-nowrap"
+              className="w-full md:w-auto bg-white text-teal-900 hover:bg-teal-50 px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer hover:shadow-lg"
             >
               <ListTodo className="w-4 h-4 text-teal-600" />
               {routineStats.total === 0 ? "Montar Minha Rotina" : "Acessar Checklist"}
@@ -550,31 +632,42 @@ const DashboardView = ({ isAdmin, currentUser, onNavigate }) => {
       )}
 
       {/* Agenda do Dia */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100">
-          <h3 className="text-lg font-semibold text-gray-800">Próximas Consultas</h3>
+      <div className="bg-white rounded-2xl shadow-xs border border-slate-200/80 overflow-hidden">
+        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Calendar className="w-5 h-5 text-emerald-600" />
+            <h3 className="text-base font-bold text-slate-800">Próximas Consultas</h3>
+          </div>
+          {consultasHoje.length > 0 && (
+            <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+              {consultasHoje.length} confirmada{consultasHoje.length > 1 ? 's' : ''}
+            </span>
+          )}
         </div>
-        <div className="divide-y divide-gray-100">
+        <div className="divide-y divide-slate-100">
           {loading ? (
-            <div className="p-10 text-center flex flex-col items-center justify-center text-gray-500">
-              <Loader2 className="w-8 h-8 animate-spin text-green-600 mb-2" />
-              <p>Carregando agenda...</p>
+            <div className="p-12 text-center flex flex-col items-center justify-center text-slate-500">
+              <Loader2 className="w-8 h-8 animate-spin text-emerald-600 mb-2" />
+              <p className="text-xs font-medium text-slate-500">Carregando consultas confirmadas...</p>
             </div>
           ) : consultasHoje.length > 0 ? (
             consultasHoje.map((consulta) => (
-              <div key={consulta.id} className="p-6 flex flex-col sm:flex-row sm:items-center justify-between hover:bg-gray-50 transition-colors">
-                <div className="flex items-center space-x-4 mb-4 sm:mb-0">
-                  <div className="bg-green-100 text-green-700 font-bold px-3 py-2 rounded-lg text-center min-w-[70px]">
+              <div key={consulta.id} className="p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between hover:bg-slate-50/70 transition-colors gap-4">
+                <div className="flex items-center space-x-4">
+                  <div className="bg-emerald-50 text-emerald-800 font-extrabold px-3.5 py-2 rounded-xl text-center min-w-[70px] border border-emerald-200/70 shadow-2xs">
                     {consulta.hora}
                   </div>
                   <div>
-                    <h4 className="text-md font-semibold text-gray-800">{consulta.pacienteNome || 'Paciente'}</h4>
-                    <p className="text-sm text-gray-500">{(consulta.data || '').split('-').reverse().join('/')} - {consulta.observacoes || 'Consulta'}</p>
+                    <h4 className="text-sm sm:text-base font-bold text-slate-800">{consulta.pacienteNome || 'Paciente'}</h4>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      <span className="font-semibold text-slate-600">{(consulta.data || '').split('-').reverse().join('/')}</span>
+                      {consulta.observacoes ? ` — "${consulta.observacoes}"` : ' — Consulta de rotina'}
+                    </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
-                    Confirmado
+                <div className="flex items-center gap-2 self-end sm:self-center">
+                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Confirmado
                   </span>
                   {isAdmin && (
                     <button
@@ -599,10 +692,10 @@ const DashboardView = ({ isAdmin, currentUser, onNavigate }) => {
                           notify.error("Erro ao encerrar consulta.");
                         }
                       }}
-                      className="bg-slate-700 hover:bg-slate-800 text-white px-3 py-1 rounded-lg text-xs font-medium transition-colors flex items-center shadow-sm"
+                      className="bg-slate-800 hover:bg-slate-900 text-white px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center shadow-xs"
                       title="Encerrar consulta aberta"
                     >
-                      <CheckCircle2 className="w-3.5 h-3.5 mr-1 text-green-400" />
+                      <CheckCircle2 className="w-3.5 h-3.5 mr-1 text-emerald-400" />
                       Encerrar
                     </button>
                   )}
@@ -610,10 +703,12 @@ const DashboardView = ({ isAdmin, currentUser, onNavigate }) => {
               </div>
             ))
           ) : (
-            <div className="p-10 text-center flex flex-col items-center justify-center text-gray-500">
-              <Calendar className="w-12 h-12 text-gray-300 mb-3" />
-              <p className="text-lg font-medium text-gray-700">Agenda livre</p>
-              <p className="text-sm">Nenhuma consulta confirmada no momento.</p>
+            <div className="p-12 text-center flex flex-col items-center justify-center text-slate-500">
+              <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center mb-3 text-slate-300">
+                <Calendar className="w-7 h-7" />
+              </div>
+              <p className="text-base font-bold text-slate-700">Agenda livre</p>
+              <p className="text-xs text-slate-400 mt-1 max-w-xs">Nenhuma consulta confirmada no momento para este período.</p>
             </div>
           )}
         </div>
@@ -748,28 +843,39 @@ const PacientesView = ({ isAdmin, onOpenChat, onOpenFicha, onOpenRotina, current
   );
 
   return (
-    <div className="p-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-        <h2 className="text-2xl font-bold text-gray-800">Pacientes</h2>
+    <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <h2 className="text-2xl font-bold text-slate-800 tracking-tight">Pacientes</h2>
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
+              {pacientesList.length} cadastrado{pacientesList.length === 1 ? '' : 's'}
+            </span>
+          </div>
+          <p className="text-xs sm:text-sm text-slate-500 mt-0.5">Gerencie os cadastros, fichas de anamnese, rotinas e planos alimentares</p>
+        </div>
         {isAdmin && (
-          <button className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center shadow transition-colors w-full sm:w-auto justify-center">
-            <Plus className="w-5 h-5 mr-2" />
+          <button 
+            onClick={() => notify.info('Novos pacientes realizam o auto-cadastro na tela inicial selecionando a opção "Paciente".', 'Novo Paciente')}
+            className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center shadow-xs hover:shadow-md transition-all w-full sm:w-auto justify-center cursor-pointer"
+          >
+            <Plus className="w-4 h-4 mr-1.5" />
             Novo Paciente
           </button>
         )}
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-xs border border-slate-200/80 overflow-hidden">
         {/* Barra de Pesquisa de Pacientes */}
-        <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+        <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
           <div className="relative w-full sm:w-80">
-            <Search className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
             <input
               type="text"
               placeholder="Buscar por nome ou email..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none transition-all text-sm"
+              className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all text-xs font-medium text-slate-700"
             />
           </div>
         </div>
@@ -777,108 +883,111 @@ const PacientesView = ({ isAdmin, onOpenChat, onOpenFicha, onOpenRotina, current
         {/* Tabela de Pacientes */}
         <div className="overflow-x-auto">
           {loadingData ? (
-            <div className="p-10 flex flex-col items-center justify-center text-green-600">
+            <div className="p-12 flex flex-col items-center justify-center text-emerald-600">
               <Loader2 className="w-8 h-8 animate-spin mb-2" />
-              <p className="text-gray-500 font-medium">Carregando dados do servidor...</p>
+              <p className="text-xs font-medium text-slate-500">Carregando lista de pacientes...</p>
             </div>
           ) : errorMessage ? (
-            <div className="p-10 flex flex-col items-center justify-center text-red-500 text-center">
-              <AlertCircle className="w-12 h-12 mb-3 text-red-400" />
+            <div className="p-10 flex flex-col items-center justify-center text-rose-500 text-center">
+              <AlertCircle className="w-12 h-12 mb-3 text-rose-400" />
               <p className="font-bold text-lg mb-1">Erro de Permissão no Firebase</p>
-              <p className="text-sm text-gray-600 max-w-md">O Firestore bloqueou a leitura. Verifique se o banco de dados foi criado e se as <b>Regras (Rules)</b> estão configuradas corretamente.</p>
-              <p className="text-xs text-gray-400 mt-3 bg-red-50 px-3 py-2 rounded border border-red-100 break-all">{errorMessage}</p>
+              <p className="text-sm text-slate-600 max-w-md">O banco de dados bloqueou a leitura. Verifique se as Regras (Rules) estão configuradas corretamente.</p>
+              <p className="text-xs text-rose-500 mt-3 bg-rose-50 px-3 py-2 rounded-xl border border-rose-100 break-all">{errorMessage}</p>
             </div>
           ) : (
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-gray-50 border-b border-gray-100 text-gray-500 text-sm">
-                  <th className="p-4 font-medium">Nome do Paciente</th>
-                  <th className="p-4 font-medium hidden sm:table-cell">Contato</th>
-                  <th className="p-4 font-medium hidden md:table-cell">Peso</th>
-                  <th className="p-4 font-medium">Status</th>
-                  <th className="p-4 font-medium hidden lg:table-cell">Próxima Consulta</th>
-                  <th className="p-4 font-medium text-right">Ações</th>
+                <tr className="bg-slate-50/80 border-b border-slate-100 text-slate-400 text-[11px] font-bold uppercase tracking-wider">
+                  <th className="p-4">Nome do Paciente</th>
+                  <th className="p-4 hidden sm:table-cell">Contato</th>
+                  <th className="p-4 hidden md:table-cell">Peso</th>
+                  <th className="p-4">Status</th>
+                  <th className="p-4 hidden lg:table-cell">Próxima Consulta</th>
+                  <th className="p-4 text-right">Ações</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-slate-100">
                 {filteredPacientes.length > 0 ? (
                   filteredPacientes.map((paciente) => {
                     const chatId = currentUserId ? [currentUserId, paciente.id].sort().join('_') : null;
                     const hasUnread = unreadChats && chatId && unreadChats[chatId];
                     return (
-                    <tr key={paciente.id} className="hover:bg-gray-50 transition-colors">
+                    <tr key={paciente.id} className="hover:bg-slate-50/70 transition-colors">
                       <td className="p-4">
                         <div className="flex items-center space-x-3">
-                          <div className="relative">
-                            <div className="w-8 h-8 rounded-full bg-green-100 text-green-700 flex items-center justify-center font-bold text-sm">
+                          <div className="relative shrink-0">
+                            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white flex items-center justify-center font-bold text-xs shadow-xs">
                               {(paciente.nome || paciente.email || 'P').charAt(0).toUpperCase()}
                             </div>
                             {hasUnread && (
-                              <span className="absolute -top-1 -right-1 block w-3 h-3 bg-red-500 rounded-full border-2 border-white"></span>
+                              <span className="absolute -top-1 -right-1 block w-3 h-3 bg-rose-500 rounded-full border-2 border-white animate-pulse"></span>
                             )}
                           </div>
                           <div>
-                            <p className="font-semibold text-gray-800 text-sm">{paciente.nome || 'Cadastro Incompleto'}</p>
-                            <p className="text-xs text-gray-500 sm:hidden">{paciente.telefone || 'Sem telefone'}</p>
+                            <p className="font-bold text-slate-800 text-xs sm:text-sm">{paciente.nome || 'Cadastro Incompleto'}</p>
+                            <p className="text-[11px] text-slate-400 sm:hidden">{paciente.telefone || 'Sem telefone'}</p>
                           </div>
                         </div>
                       </td>
                       <td className="p-4 hidden sm:table-cell">
-                        <p className="text-sm text-gray-800">{paciente.email}</p>
-                        <p className="text-xs text-gray-500">{paciente.telefone || 'Sem telefone'}</p>
+                        <p className="text-xs sm:text-sm text-slate-700 font-medium">{paciente.email}</p>
+                        <p className="text-[11px] text-slate-400">{paciente.telefone || 'Sem telefone'}</p>
                       </td>
                       <td className="p-4 hidden md:table-cell">
-                        <p className="text-sm text-gray-800">{paciente.peso || '-'}</p>
+                        <p className="text-xs sm:text-sm text-slate-700 font-medium">{paciente.peso || '-'}</p>
                       </td>
                       <td className="p-4">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          paciente.planoAtivo ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
+                          paciente.planoAtivo 
+                            ? 'bg-emerald-100 text-emerald-800 border-emerald-200' 
+                            : 'bg-slate-100 text-slate-600 border-slate-200'
                         }`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${paciente.planoAtivo ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`}></span>
                           {paciente.planoAtivo ? 'Plano Ativo' : 'Inativo'}
                         </span>
                       </td>
                       <td className="p-4 hidden lg:table-cell">
-                        <div className="flex items-center text-sm text-gray-600">
-                          <CalendarDays className="w-4 h-4 mr-2 text-gray-400" />
+                        <div className="flex items-center text-xs sm:text-sm text-slate-600 font-medium">
+                          <CalendarDays className="w-4 h-4 mr-1.5 text-slate-400" />
                           {getProximaConsulta(paciente.id) || 'Não agendada'}
                         </div>
                       </td>
                       <td className="p-4 text-right">
-                        <div className="flex items-center justify-end gap-1.5 sm:gap-2">
+                        <div className="flex items-center justify-end gap-1.5">
                           <button 
                             onClick={() => onOpenFicha && onOpenFicha(paciente)}
-                            className="text-green-600 hover:text-green-800 text-sm font-medium transition-colors"
+                            className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 transition-colors"
                             title="Ver Ficha do Paciente"
                           >
-                            Ver Ficha
+                            Ficha
                           </button>
                           <button 
                             onClick={() => onOpenRotina && onOpenRotina(paciente)}
-                            className="text-teal-600 hover:text-teal-800 text-sm font-medium transition-colors flex items-center gap-1"
+                            className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-800 transition-colors flex items-center gap-1"
                             title="Visualizar rotina e adesão de hábitos do paciente"
                           >
-                            <ListTodo className="w-4 h-4" />
+                            <ListTodo className="w-3.5 h-3.5" />
                             Rotina
                           </button>
                           <button 
                             onClick={() => onOpenChat && onOpenChat(paciente)}
-                            className="text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors flex items-center gap-1"
+                            className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-800 transition-colors flex items-center gap-1"
                             title="Abrir Chat com o Paciente"
                           >
-                            <MessageCircle className="w-4 h-4" />
+                            <MessageCircle className="w-3.5 h-3.5" />
                             Chat
                           </button>
                           {isAdmin && (
                             <button 
                               onClick={() => handleDelete(paciente)}
                               disabled={deletingId === paciente.id}
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50 p-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1 disabled:opacity-50"
+                              className="px-2 py-1 text-xs font-semibold rounded-lg text-rose-600 hover:bg-rose-50 hover:text-rose-700 transition-colors flex items-center gap-1 disabled:opacity-50"
                               title={`Excluir paciente ${paciente.nome || paciente.email}`}
                             >
                               {deletingId === paciente.id ? (
-                                <Loader2 className="w-4 h-4 animate-spin text-red-600" />
+                                <Loader2 className="w-3.5 h-3.5 animate-spin text-rose-600" />
                               ) : (
-                                <Trash2 className="w-4 h-4" />
+                                <Trash2 className="w-3.5 h-3.5" />
                               )}
                               <span className="hidden xl:inline">Excluir</span>
                             </button>
@@ -890,9 +999,16 @@ const PacientesView = ({ isAdmin, onOpenChat, onOpenFicha, onOpenRotina, current
                  })
                 ) : (
                   <tr>
-                    <td colSpan="6" className="p-8 text-center text-gray-500">
-                      <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                      <p>{searchTerm ? `Nenhum paciente encontrado com "${searchTerm}".` : 'Nenhum paciente cadastrado até o momento.'}</p>
+                    <td colSpan="6" className="p-12 text-center text-slate-500">
+                      <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-3 text-slate-300">
+                        <Users className="w-7 h-7" />
+                      </div>
+                      <p className="font-semibold text-slate-700 text-sm">
+                        {searchTerm ? `Nenhum paciente encontrado com "${searchTerm}".` : 'Nenhum paciente cadastrado até o momento.'}
+                      </p>
+                      <p className="text-xs text-slate-400 mt-1">
+                        {searchTerm ? 'Tente verificar a ortografia ou buscar por email.' : 'Os novos cadastros aparecerão automaticamente aqui.'}
+                      </p>
                     </td>
                   </tr>
                 )}
@@ -5347,75 +5463,128 @@ const PatientScheduleView = ({ currentUser }) => {
   };
 
   return (
-    <div className="p-6">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">Agendar Consulta</h2>
+    <div className="p-4 sm:p-6 max-w-6xl mx-auto space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold text-slate-800 tracking-tight">Agendar Consulta</h2>
+        <p className="text-xs sm:text-sm text-slate-500 mt-0.5">Solicite um novo horário de atendimento com sua nutricionista</p>
+      </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 h-fit">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Solicitar Horário</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+        <div className="bg-white p-6 rounded-2xl shadow-xs border border-slate-200/80">
+          <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-100">
+            <Calendar className="w-5 h-5 text-emerald-600" />
+            <h3 className="text-base font-bold text-slate-800">Solicitar Horário</h3>
+          </div>
           <form onSubmit={handleSolicitar} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Data Desejada</label>
-              <input type="date" value={dataReq} onChange={e=>setDataReq(e.target.value)} required className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none" />
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">Data Desejada</label>
+              <input 
+                type="date" 
+                value={dataReq} 
+                onChange={e=>setDataReq(e.target.value)} 
+                required 
+                className="w-full px-4 py-2.5 bg-slate-50/80 border border-slate-200 rounded-xl focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none text-xs font-medium text-slate-800 transition-all" 
+              />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Período / Hora</label>
-              <input type="time" value={horaReq} onChange={e=>setHoraReq(e.target.value)} required className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none" />
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">Horário Pretendido</label>
+              <input 
+                type="time" 
+                value={horaReq} 
+                onChange={e=>setHoraReq(e.target.value)} 
+                required 
+                className="w-full px-4 py-2.5 bg-slate-50/80 border border-slate-200 rounded-xl focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none text-xs font-medium text-slate-800 transition-all" 
+              />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Observações</label>
-              <textarea rows="3" value={obsReq} onChange={e=>setObsReq(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none" placeholder="Motivo ou preferência..."></textarea>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">Observações ou Motivo (Opcional)</label>
+              <textarea 
+                rows="3" 
+                value={obsReq} 
+                onChange={e=>setObsReq(e.target.value)} 
+                className="w-full px-4 py-2.5 bg-slate-50/80 border border-slate-200 rounded-xl focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none text-xs font-medium text-slate-800 transition-all" 
+                placeholder="Ex: Primeira consulta, ajuste calórico, acompanhamento de bioimpedância..."
+              ></textarea>
             </div>
-            <button type="submit" disabled={enviando} className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 rounded-lg transition-colors flex justify-center">
-              {enviando ? <Loader2 className="w-5 h-5 animate-spin"/> : 'Solicitar Agendamento'}
+            <button 
+              type="submit" 
+              disabled={enviando} 
+              className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold py-2.5 rounded-xl transition-all shadow-md shadow-emerald-600/20 flex justify-center items-center text-xs sm:text-sm cursor-pointer disabled:opacity-50"
+            >
+              {enviando ? <Loader2 className="w-5 h-5 animate-spin"/> : 'Enviar Solicitação à Nutricionista'}
             </button>
           </form>
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Meus Agendamentos</h3>
+        <div className="bg-white p-6 rounded-2xl shadow-xs border border-slate-200/80">
+          <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+            <div className="flex items-center gap-2">
+              <Clock className="w-5 h-5 text-emerald-600" />
+              <h3 className="text-base font-bold text-slate-800">Meus Agendamentos</h3>
+            </div>
+            {consultas.length > 0 && (
+              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+                {consultas.length} total
+              </span>
+            )}
+          </div>
           <div className="space-y-3">
-            {loading ? <p className="text-sm text-gray-500">Carregando...</p> : 
-             consultas.length === 0 ? <p className="text-sm text-gray-500">Nenhuma solicitação.</p> :
+            {loading ? (
+              <div className="p-8 text-center text-slate-400 flex flex-col items-center justify-center">
+                <Loader2 className="w-6 h-6 animate-spin text-emerald-600 mb-2" />
+                <p className="text-xs">Carregando seus agendamentos...</p>
+              </div>
+            ) : consultas.length === 0 ? (
+              <div className="p-8 text-center text-slate-400">
+                <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-2 text-slate-300">
+                  <CalendarDays className="w-6 h-6" />
+                </div>
+                <p className="text-xs font-medium text-slate-600">Nenhum agendamento ativo.</p>
+                <p className="text-[11px] text-slate-400 mt-0.5">Preencha o formulário ao lado para solicitar.</p>
+              </div>
+            ) : (
              consultas.map(c => {
                const isAprovada = c.status === 'Aprovado';
                const isEncerrada = c.status === 'Encerrada';
 
                return (
-                <div key={c.id} className={`border rounded-lg p-4 flex flex-col gap-2 ${
-                  isAprovada ? 'border-green-200 bg-green-50' : 
-                  isEncerrada ? 'border-gray-200 bg-gray-50' : 
-                  'border-yellow-200 bg-yellow-50'
+                <div key={c.id} className={`border rounded-2xl p-4 flex flex-col gap-2 transition-all ${
+                  isAprovada ? 'border-emerald-200 bg-emerald-50/30' : 
+                  isEncerrada ? 'border-slate-200 bg-slate-50/60 opacity-90' : 
+                  'border-amber-200 bg-amber-50/40'
                 }`}>
                   <div className="flex items-start gap-3">
-                    <CalendarDays className={`w-5 h-5 mt-0.5 ${
-                      isAprovada ? 'text-green-600' : 
-                      isEncerrada ? 'text-gray-500' : 
-                      'text-yellow-600'
-                    }`} />
-                    <div className="flex-1">
-                      <p className={`font-semibold ${
-                        isAprovada ? 'text-green-800' : 
-                        isEncerrada ? 'text-gray-700' : 
-                        'text-yellow-800'
+                    <div className={`p-2 rounded-xl shrink-0 ${
+                      isAprovada ? 'bg-emerald-100 text-emerald-700' :
+                      isEncerrada ? 'bg-slate-100 text-slate-600' :
+                      'bg-amber-100 text-amber-700'
+                    }`}>
+                      <CalendarDays className="w-4 h-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-sm font-bold ${
+                        isAprovada ? 'text-emerald-900' : 
+                        isEncerrada ? 'text-slate-800' : 
+                        'text-amber-900'
                       }`}>
                         {(c.data || '').split('-').reverse().join('/')} às {c.hora}
                       </p>
-                      {c.observacoes && <p className="text-sm text-gray-600 mt-1">Obs: {c.observacoes}</p>}
-                      <div className="flex items-center gap-3 mt-2">
-                        <span className={`inline-block text-xs font-bold px-2 py-1 rounded-full border ${
-                          isAprovada ? 'text-green-600 bg-green-100 border-green-200' : 
-                          isEncerrada ? 'text-gray-600 bg-gray-100 border-gray-300' : 
-                          'text-yellow-600 bg-yellow-100 border-yellow-200'
+                      {c.observacoes && <p className="text-xs text-slate-600 mt-1 italic truncate">"{c.observacoes}"</p>}
+                      <div className="flex flex-wrap items-center gap-2 mt-2.5">
+                        <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${
+                          isAprovada ? 'text-emerald-800 bg-emerald-100 border-emerald-200' : 
+                          isEncerrada ? 'text-slate-700 bg-slate-100 border-slate-200' : 
+                          'text-amber-800 bg-amber-100 border-amber-200'
                         }`}>
-                          {isAprovada ? 'Aprovado' : isEncerrada ? 'Encerrada' : 'Aguardando Confirmação'}
+                          {isAprovada && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>}
+                          {isAprovada ? 'Aprovado' : isEncerrada ? 'Encerrada' : 'Aguardando Aprovação'}
                         </span>
                         {(isAprovada || isEncerrada) && currentUser.onOpenConsultaChat && (
                           <button 
                             onClick={() => currentUser.onOpenConsultaChat(c)}
-                            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs font-medium transition-colors flex items-center"
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-xl text-xs font-semibold transition-colors flex items-center shadow-xs"
                           >
-                            <MessageCircle className="w-3 h-3 mr-1" /> {isEncerrada ? 'Ver Histórico' : 'Chat'}
+                            <MessageCircle className="w-3.5 h-3.5 mr-1" /> {isEncerrada ? 'Ver Histórico' : 'Chat da Consulta'}
                           </button>
                         )}
                       </div>
@@ -5424,7 +5593,7 @@ const PatientScheduleView = ({ currentUser }) => {
                 </div>
                );
              })
-            }
+            )}
           </div>
         </div>
       </div>
@@ -6448,6 +6617,70 @@ const AdminConsultasView = ({ currentUser, onOpenConsultaChat }) => {
     }
   };
 
+  const handleDeleteEncerrada = async (consulta) => {
+    const dataFormatada = (consulta.data || '').split('-').reverse().join('/');
+    const confirmed = await showConfirm({
+      title: "Excluir Consulta do Histórico",
+      message: `Tem certeza que deseja excluir permanentemente do histórico a consulta com "${consulta.pacienteNome || 'Paciente'}" agendada para ${dataFormatada} às ${consulta.hora}? Esta ação removerá a consulta e todas as mensagens do chat da consulta.`,
+      confirmText: "Sim, Excluir do Histórico",
+      cancelText: "Cancelar",
+      variant: "danger"
+    });
+
+    if (!confirmed) return;
+
+    try {
+      const cId = consulta.id;
+      const pId = consulta.pacienteId;
+      await remove(ref(db, `consultas/${cId}`));
+      await remove(ref(db, `chats/consulta_${cId}`));
+      if (currentUser?.uid) {
+        await remove(ref(db, `unreadMessages/${currentUser.uid}/consulta_${cId}`));
+      }
+      if (pId) {
+        await remove(ref(db, `unreadMessages/${pId}/consulta_${cId}`));
+      }
+      notify.success("Consulta excluída do histórico com sucesso!", "Consulta Excluída");
+    } catch (err) {
+      console.error(err);
+      notify.error("Erro ao excluir consulta do histórico.");
+    }
+  };
+
+  const handleLimparTodasEncerradas = async () => {
+    const encerradasList = consultas.filter(c => c.status === 'Encerrada');
+    if (encerradasList.length === 0) return;
+
+    const confirmed = await showConfirm({
+      title: "Limpar Todo o Histórico de Encerradas",
+      message: `Tem certeza que deseja apagar permanentemente todas as ${encerradasList.length} consultas encerradas do histórico? Esta ação é definitiva e removerá as consultas e seus históricos de chat.`,
+      confirmText: `Sim, Limpar Todas (${encerradasList.length})`,
+      cancelText: "Cancelar",
+      variant: "danger"
+    });
+
+    if (!confirmed) return;
+
+    try {
+      const removals = [];
+      encerradasList.forEach(c => {
+        removals.push(remove(ref(db, `consultas/${c.id}`)));
+        removals.push(remove(ref(db, `chats/consulta_${c.id}`)));
+        if (currentUser?.uid) {
+          removals.push(remove(ref(db, `unreadMessages/${currentUser.uid}/consulta_${c.id}`)));
+        }
+        if (c.pacienteId) {
+          removals.push(remove(ref(db, `unreadMessages/${c.pacienteId}/consulta_${c.id}`)));
+        }
+      });
+      await Promise.all(removals);
+      notify.success(`Histórico limpo! ${encerradasList.length} consultas encerradas foram excluídas.`, "Histórico Limpo");
+    } catch (err) {
+      console.error(err);
+      notify.error("Erro ao limpar histórico de consultas encerradas.");
+    }
+  };
+
   const totalTodas = consultas.length;
   const totalAbertas = consultas.filter(c => c.status === 'Aprovado').length;
   const totalPendentes = consultas.filter(c => c.status === 'Pendente').length;
@@ -6461,76 +6694,96 @@ const AdminConsultasView = ({ currentUser, onOpenConsultaChat }) => {
   });
 
   return (
-    <div className="p-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+    <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6">
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-gray-800">Gerenciamento de Consultas</h2>
-          <p className="text-sm text-gray-500">Acompanhe, aprove e encerre as consultas com seus pacientes</p>
+          <div className="flex items-center gap-2">
+            <h2 className="text-2xl font-bold text-gray-800 tracking-tight">Gerenciamento de Consultas</h2>
+            <span className="hidden sm:inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
+              {totalTodas} {totalTodas === 1 ? 'registro' : 'registros'}
+            </span>
+          </div>
+          <p className="text-sm text-gray-500 mt-0.5">Acompanhe, aprove, conclua e gerencie o histórico de consultas com seus pacientes</p>
         </div>
         
-        {/* Filtros por Status */}
-        <div className="flex items-center gap-1.5 bg-gray-100 p-1 rounded-xl self-stretch sm:self-auto overflow-x-auto">
-          <button
-            onClick={() => setFiltroStatus('todas')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-1.5 ${
-              filtroStatus === 'todas'
-                ? 'bg-white text-gray-800 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            Todas
-            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-gray-200 text-gray-700">{totalTodas}</span>
-          </button>
-          <button
-            onClick={() => setFiltroStatus('abertas')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-1.5 ${
-              filtroStatus === 'abertas'
-                ? 'bg-white text-green-700 shadow-sm'
-                : 'text-gray-600 hover:text-green-700'
-            }`}
-          >
-            <span className="w-2 h-2 rounded-full bg-green-500"></span>
-            Abertas
-            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-green-100 text-green-800">{totalAbertas}</span>
-          </button>
-          <button
-            onClick={() => setFiltroStatus('pendentes')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-1.5 ${
-              filtroStatus === 'pendentes'
-                ? 'bg-white text-yellow-700 shadow-sm'
-                : 'text-gray-600 hover:text-yellow-700'
-            }`}
-          >
-            <span className="w-2 h-2 rounded-full bg-yellow-500"></span>
-            Pendentes
-            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-yellow-100 text-yellow-800">{totalPendentes}</span>
-          </button>
-          <button
-            onClick={() => setFiltroStatus('encerradas')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-1.5 ${
-              filtroStatus === 'encerradas'
-                ? 'bg-white text-slate-700 shadow-sm'
-                : 'text-gray-600 hover:text-slate-700'
-            }`}
-          >
-            <CheckCircle2 className="w-3 h-3 text-slate-500" />
-            Encerradas
-            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-gray-200 text-gray-700">{totalEncerradas}</span>
-          </button>
+        {/* Controles: Filtros por Status e Botão de Limpeza em Lote */}
+        <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+          <div className="flex items-center gap-1 bg-gray-100/90 p-1.5 rounded-2xl overflow-x-auto w-full sm:w-auto border border-gray-200/60 shadow-xs">
+            <button
+              onClick={() => setFiltroStatus('todas')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-1.5 ${
+                filtroStatus === 'todas'
+                  ? 'bg-white text-gray-800 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              Todas
+              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-gray-200/80 text-gray-700">{totalTodas}</span>
+            </button>
+            <button
+              onClick={() => setFiltroStatus('abertas')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-1.5 ${
+                filtroStatus === 'abertas'
+                  ? 'bg-white text-emerald-700 shadow-sm'
+                  : 'text-gray-600 hover:text-emerald-700'
+              }`}
+            >
+              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+              Abertas
+              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">{totalAbertas}</span>
+            </button>
+            <button
+              onClick={() => setFiltroStatus('pendentes')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-1.5 ${
+                filtroStatus === 'pendentes'
+                  ? 'bg-white text-amber-700 shadow-sm'
+                  : 'text-gray-600 hover:text-amber-700'
+              }`}
+            >
+              <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+              Pendentes
+              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">{totalPendentes}</span>
+            </button>
+            <button
+              onClick={() => setFiltroStatus('encerradas')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-1.5 ${
+                filtroStatus === 'encerradas'
+                  ? 'bg-white text-slate-700 shadow-sm'
+                  : 'text-gray-600 hover:text-slate-700'
+              }`}
+            >
+              <CheckCircle2 className="w-3.5 h-3.5 text-slate-500" />
+              Encerradas
+              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-gray-200 text-gray-700">{totalEncerradas}</span>
+            </button>
+          </div>
+
+          {filtroStatus === 'encerradas' && totalEncerradas > 0 && (
+            <button
+              onClick={handleLimparTodasEncerradas}
+              className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/90 transition-all flex items-center gap-1.5 shadow-xs shrink-0"
+              title="Excluir todas as consultas encerradas de uma vez"
+            >
+              <Trash2 className="w-3.5 h-3.5 text-rose-500" />
+              Limpar Todo o Histórico
+            </button>
+          )}
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100/90 overflow-hidden">
         {loading ? (
-          <div className="p-10 flex flex-col items-center justify-center text-green-600">
+          <div className="p-12 flex flex-col items-center justify-center text-emerald-600">
             <Loader2 className="w-8 h-8 animate-spin mb-2" />
-            <p className="text-gray-500 font-medium">Carregando consultas...</p>
+            <p className="text-gray-500 font-medium text-sm">Carregando consultas...</p>
           </div>
         ) : consultasFiltradas.length === 0 ? (
-          <div className="p-10 text-center text-gray-500">
-            <CalendarDays className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-            <p className="font-medium text-gray-700">Nenhuma consulta encontrada.</p>
-            <p className="text-xs text-gray-400 mt-1">
+          <div className="p-12 text-center text-gray-500">
+            <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-3 text-gray-400">
+              <CalendarDays className="w-8 h-8" />
+            </div>
+            <p className="font-semibold text-gray-700 text-base">Nenhuma consulta encontrada.</p>
+            <p className="text-xs text-gray-400 mt-1 max-w-sm mx-auto">
               {filtroStatus !== 'todas' ? 'Tente alternar o filtro de status para ver outros registros.' : 'Nenhuma solicitação ou agendamento registrado até o momento.'}
             </p>
           </div>
@@ -6542,59 +6795,80 @@ const AdminConsultasView = ({ currentUser, onOpenConsultaChat }) => {
               const isPendente = c.status === 'Pendente';
 
               return (
-                <div key={c.id} className={`p-6 flex flex-col md:flex-row justify-between items-start md:items-center hover:bg-gray-50 transition-colors ${
-                  isAberta ? 'bg-green-50/20' : isEncerrada ? 'bg-gray-50/50 opacity-90' : ''
+                <div key={c.id} className={`p-5 sm:p-6 flex flex-col md:flex-row justify-between items-start md:items-center hover:bg-slate-50/70 transition-all relative ${
+                  isAberta ? 'bg-emerald-50/15' : isEncerrada ? 'bg-slate-50/40 opacity-95' : ''
                 }`}>
-                  <div className="mb-4 md:mb-0">
-                    <div className="flex items-center gap-2">
-                      <h4 className="text-lg font-semibold text-gray-800">{c.pacienteNome || 'Paciente'}</h4>
+                  <div className="mb-4 md:mb-0 space-y-1.5">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-xs shrink-0">
+                        {(c.pacienteNome || 'P').charAt(0).toUpperCase()}
+                      </div>
+                      <h4 className="text-base sm:text-lg font-bold text-gray-800">{c.pacienteNome || 'Paciente'}</h4>
                       {isAberta && (
-                        <span className="bg-green-100 text-green-700 text-[11px] font-bold px-2 py-0.5 rounded-full border border-green-200 flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span> Aberta
+                        <span className="bg-emerald-100 text-emerald-800 text-[11px] font-bold px-2.5 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Aberta
                         </span>
                       )}
                       {isEncerrada && (
-                        <span className="bg-gray-100 text-gray-600 text-[11px] font-semibold px-2 py-0.5 rounded-full border border-gray-300 flex items-center gap-1">
-                          <CheckCircle2 className="w-3 h-3 text-gray-500" /> Concluída
+                        <span className="bg-slate-100 text-slate-700 text-[11px] font-semibold px-2.5 py-0.5 rounded-full border border-slate-200 flex items-center gap-1.5">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-slate-500" /> Concluída
                         </span>
                       )}
                       {isPendente && (
-                        <span className="bg-yellow-100 text-yellow-700 text-[11px] font-bold px-2 py-0.5 rounded-full border border-yellow-200">
-                          Pendente
+                        <span className="bg-amber-100 text-amber-800 text-[11px] font-bold px-2.5 py-0.5 rounded-full border border-amber-200 flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Pendente
                         </span>
                       )}
                     </div>
-                    <div className="flex items-center text-gray-600 mt-1.5 gap-4 text-sm">
-                      <span className="flex items-center"><CalendarDays className="w-4 h-4 mr-1 text-gray-400"/> {(c.data || '').split('-').reverse().join('/')}</span>
-                      <span className="flex items-center"><Clock className="w-4 h-4 mr-1 text-gray-400"/> {c.hora}</span>
+                    <div className="flex flex-wrap items-center text-gray-600 gap-3 text-xs sm:text-sm pl-10">
+                      <span className="flex items-center text-slate-600 font-medium">
+                        <CalendarDays className="w-4 h-4 mr-1 text-gray-400"/> {(c.data || '').split('-').reverse().join('/')}
+                      </span>
+                      <span className="flex items-center text-slate-600 font-medium">
+                        <Clock className="w-4 h-4 mr-1 text-gray-400"/> {c.hora}
+                      </span>
                     </div>
-                    {c.observacoes && <p className="text-sm text-gray-500 mt-2 italic">"{c.observacoes}"</p>}
+                    {c.observacoes && (
+                      <p className="text-xs sm:text-sm text-gray-500 italic pl-10">"{c.observacoes}"</p>
+                    )}
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
+                  <div className="flex flex-wrap items-center gap-2 w-full md:w-auto md:justify-end pl-10 md:pl-0">
                     {isPendente && (
-                      <button onClick={() => handleAprovar(c.id)} className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center shadow-sm">
+                      <button onClick={() => handleAprovar(c.id)} className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center shadow-xs hover:shadow">
                         <Check className="w-4 h-4 mr-1" /> Aprovar
                       </button>
                     )}
                     {isAberta && (
                       <>
-                        <button onClick={() => onOpenConsultaChat(c)} className="bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-2 rounded-lg text-sm font-medium transition-colors flex items-center shadow-sm">
+                        <button onClick={() => onOpenConsultaChat(c)} className="bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center shadow-xs hover:shadow">
                           <MessageCircle className="w-4 h-4 mr-1.5" /> Chat da Consulta
                         </button>
                         <button 
                           onClick={() => handleEncerrar(c)} 
-                          className="bg-slate-700 hover:bg-slate-800 text-white px-3.5 py-2 rounded-lg text-sm font-medium transition-colors flex items-center shadow-sm hover:shadow"
+                          className="bg-slate-800 hover:bg-slate-900 text-white px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center shadow-xs hover:shadow"
                           title="Encerrar consulta aberta"
                         >
-                          <CheckCircle2 className="w-4 h-4 mr-1.5 text-green-400" /> Encerrar Consulta
+                          <CheckCircle2 className="w-4 h-4 mr-1.5 text-emerald-400" /> Encerrar
                         </button>
                       </>
                     )}
                     {isEncerrada && (
-                      <button onClick={() => onOpenConsultaChat(c)} className="bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300 px-3.5 py-2 rounded-lg text-sm font-medium transition-colors flex items-center">
-                        <MessageCircle className="w-4 h-4 mr-1.5 text-gray-500" /> Ver Histórico
-                      </button>
+                      <>
+                        <button 
+                          onClick={() => onOpenConsultaChat(c)} 
+                          className="bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 hover:border-slate-300 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center shadow-xs hover:shadow-sm"
+                        >
+                          <MessageCircle className="w-4 h-4 mr-1.5 text-slate-400" /> Ver Histórico
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteEncerrada(c)} 
+                          className="bg-rose-50 hover:bg-rose-100 text-rose-600 hover:text-rose-700 border border-rose-200/80 hover:border-rose-300 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center shadow-xs hover:shadow-sm"
+                          title="Excluir permanentemente do histórico"
+                        >
+                          <Trash2 className="w-4 h-4 mr-1.5" /> Excluir do Histórico
+                        </button>
+                      </>
                     )}
                   </div>
                 </div>
@@ -6673,59 +6947,68 @@ const AuthView = () => {
   };
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50 items-center justify-center p-4">
-      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
-        <div className="flex justify-center mb-6">
-          <div className="flex items-center space-x-2 text-green-600">
-            <Utensils className="w-8 h-8" />
-            <span className="text-3xl font-bold text-gray-800 tracking-tight">Nutri<span className="text-green-600">App</span></span>
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50/70 via-slate-50 to-teal-50/60 flex items-center justify-center p-4 sm:p-6 relative overflow-hidden">
+      {/* Elementos visuais de fundo sutis (degrade circles) */}
+      <div className="absolute top-[-10%] right-[-5%] w-96 h-96 bg-emerald-200/30 rounded-full blur-3xl pointer-events-none"></div>
+      <div className="absolute bottom-[-10%] left-[-5%] w-96 h-96 bg-teal-200/25 rounded-full blur-3xl pointer-events-none"></div>
+
+      <div className="max-w-md w-full bg-white/95 backdrop-blur-xl rounded-3xl shadow-xl shadow-slate-900/5 p-8 sm:p-10 border border-white/80 relative z-10 animate-modal-in">
+        <div className="flex flex-col items-center mb-6">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white shadow-lg shadow-emerald-600/20 mb-3">
+            <Utensils className="w-7 h-7" />
           </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-2xl font-extrabold text-slate-800 tracking-tight">Nutri<span className="text-emerald-600">App</span></span>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 uppercase tracking-wider">PRO</span>
+          </div>
+          <p className="text-xs text-slate-500 mt-1 text-center font-medium">Gestão clínica e planos alimentares inteligentes</p>
         </div>
         
-        <h2 className="text-2xl font-bold text-center text-gray-800 mb-2">
-          {isLogin ? 'Entrar no sistema' : 'Criar nova conta'}
-        </h2>
-        {!isLogin && (
-          <p className="text-center text-sm text-gray-500 mb-6">Selecione o tipo de conta para continuar</p>
-        )}
-        {isLogin && <div className="mb-6" />}
+        <div className="text-center mb-6">
+          <h2 className="text-xl font-bold text-slate-800 tracking-tight">
+            {isLogin ? 'Bem-vindo de volta' : 'Crie sua conta'}
+          </h2>
+          <p className="text-xs text-slate-500 mt-0.5">
+            {isLogin ? 'Entre com seus dados para acessar a plataforma' : 'Preencha seus dados para começar agora'}
+          </p>
+        </div>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm rounded flex items-start gap-2">
-            <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
-            <span>{error}</span>
+          <div className="mb-5 p-3.5 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-2xl flex items-start gap-2.5 animate-modal-in">
+            <AlertCircle className="w-4 h-4 mt-0.5 shrink-0 text-rose-500" />
+            <span className="font-medium leading-relaxed">{error}</span>
           </div>
         )}
 
-        <form onSubmit={handleAuth} className="space-y-5">
+        <form onSubmit={handleAuth} className="space-y-4">
           {/* Seleção de Tipo de Conta (apenas no Cadastro) */}
           {!isLogin && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de Conta</label>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Perfil de Acesso</label>
               <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
                   onClick={() => { setAccountType('paciente'); setCodigoNutri(''); setError(''); }}
-                  className={`flex flex-col items-center p-4 rounded-xl border-2 transition-all duration-200 ${
+                  className={`flex flex-col items-center p-3.5 rounded-2xl border-2 transition-all ${
                     accountType === 'paciente'
-                      ? 'border-green-500 bg-green-50 text-green-700 shadow-sm'
-                      : 'border-gray-200 text-gray-500 hover:border-gray-300 hover:bg-gray-50'
+                      ? 'border-emerald-500 bg-emerald-50/80 text-emerald-800 shadow-xs font-bold'
+                      : 'border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 font-medium'
                   }`}
                 >
-                  <Users className={`w-6 h-6 mb-1.5 ${accountType === 'paciente' ? 'text-green-600' : 'text-gray-400'}`} />
-                  <span className="text-sm font-semibold">Paciente</span>
+                  <Users className={`w-5 h-5 mb-1 ${accountType === 'paciente' ? 'text-emerald-600' : 'text-slate-400'}`} />
+                  <span className="text-xs">Paciente</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => { setAccountType('nutricionista'); setError(''); }}
-                  className={`flex flex-col items-center p-4 rounded-xl border-2 transition-all duration-200 ${
+                  className={`flex flex-col items-center p-3.5 rounded-2xl border-2 transition-all ${
                     accountType === 'nutricionista'
-                      ? 'border-emerald-500 bg-emerald-50 text-emerald-700 shadow-sm'
-                      : 'border-gray-200 text-gray-500 hover:border-gray-300 hover:bg-gray-50'
+                      ? 'border-emerald-500 bg-emerald-50/80 text-emerald-800 shadow-xs font-bold'
+                      : 'border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 font-medium'
                   }`}
                 >
-                  <Utensils className={`w-6 h-6 mb-1.5 ${accountType === 'nutricionista' ? 'text-emerald-600' : 'text-gray-400'}`} />
-                  <span className="text-sm font-semibold">Nutricionista</span>
+                  <Utensils className={`w-5 h-5 mb-1 ${accountType === 'nutricionista' ? 'text-emerald-600' : 'text-slate-400'}`} />
+                  <span className="text-xs">Nutricionista</span>
                 </button>
               </div>
             </div>
@@ -6734,74 +7017,74 @@ const AuthView = () => {
           {/* Campo Nome (apenas no Cadastro) */}
           {!isLogin && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Nome Completo</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">Nome Completo</label>
               <input 
                 type="text" 
                 value={nome}
                 onChange={(e) => setNome(e.target.value)}
                 required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all"
-                placeholder="Seu nome completo"
+                className="w-full px-4 py-2.5 bg-slate-50/80 border border-slate-200 rounded-xl focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all text-sm font-medium text-slate-800 placeholder-slate-400"
+                placeholder="Ex: Dra. Isadora ou João Silva"
               />
             </div>
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <label className="block text-xs font-bold text-slate-700 mb-1.5">E-mail</label>
             <input 
               type="email" 
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all"
+              className="w-full px-4 py-2.5 bg-slate-50/80 border border-slate-200 rounded-xl focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all text-sm font-medium text-slate-800 placeholder-slate-400"
               placeholder="seu@email.com"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Senha</label>
+            <label className="block text-xs font-bold text-slate-700 mb-1.5">Senha</label>
             <input 
               type="password" 
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all"
+              className="w-full px-4 py-2.5 bg-slate-50/80 border border-slate-200 rounded-xl focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all text-sm font-medium text-slate-800 placeholder-slate-400"
               placeholder="••••••••"
             />
           </div>
 
           {/* Campo de Código (apenas para Nutricionista no Cadastro) */}
           {(!isLogin && accountType === 'nutricionista') && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Código de Acesso</label>
+            <div className="bg-amber-50/60 p-3 rounded-2xl border border-amber-200/80">
+              <label className="block text-xs font-bold text-amber-900 mb-1">Código de Acesso do Nutricionista</label>
               <input 
                 type="password" 
                 value={codigoNutri}
                 onChange={(e) => setCodigoNutri(e.target.value)}
                 required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
+                className="w-full px-3.5 py-2 bg-white border border-amber-300 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all text-sm font-medium"
                 placeholder="Insira o código fornecido"
               />
-              <p className="text-xs text-gray-400 mt-1">Código necessário para criar conta de nutricionista.</p>
+              <p className="text-[11px] text-amber-700 mt-1">Código de segurança necessário para registro profissional.</p>
             </div>
           )}
 
           <button 
             type="submit" 
             disabled={loading}
-            className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2.5 rounded-lg transition-colors flex justify-center items-center shadow-sm"
+            className="w-full mt-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold py-3 rounded-xl transition-all flex justify-center items-center shadow-md shadow-emerald-600/20 hover:shadow-lg disabled:opacity-60 cursor-pointer"
           >
-            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (isLogin ? 'Entrar' : 'Cadastrar')}
+            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (isLogin ? 'Entrar na Plataforma' : 'Criar Minha Conta')}
           </button>
         </form>
 
-        <div className="mt-6 text-center">
+        <div className="mt-6 pt-5 border-t border-slate-100 text-center">
           <button 
             type="button"
             onClick={() => { setIsLogin(!isLogin); setError(''); setAccountType('paciente'); setCodigoNutri(''); }}
-            className="text-sm text-green-600 hover:text-green-700 font-medium transition-colors"
+            className="text-xs font-semibold text-emerald-700 hover:text-emerald-800 transition-colors"
           >
-            {isLogin ? 'Não tem uma conta? Cadastre-se' : 'Já tem uma conta? Entre aqui'}
+            {isLogin ? 'Ainda não tem conta? Cadastre-se aqui' : 'Já possui uma conta? Clique para entrar'}
           </button>
         </div>
       </div>
@@ -7178,9 +7461,45 @@ function App() {
                   Encerrar Consulta
                 </button>
               ) : chatConsultaAtiva.status === 'Encerrada' ? (
-                <span className="px-3 py-1 rounded-full text-xs font-bold border bg-gray-100 text-gray-700 border-gray-300 flex items-center gap-1.5 w-fit">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-gray-500" /> Consulta Encerrada
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="px-3 py-1 rounded-full text-xs font-bold border bg-gray-100 text-gray-700 border-gray-300 flex items-center gap-1.5 w-fit">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-gray-500" /> Consulta Encerrada
+                  </span>
+                  <button
+                    onClick={async () => {
+                      const dataFormatada = (chatConsultaAtiva.data || '').split('-').reverse().join('/');
+                      const confirmed = await showConfirm({
+                        title: "Excluir Consulta do Histórico",
+                        message: `Deseja realmente excluir permanentemente do histórico a consulta com "${chatConsultaAtiva.pacienteNome || 'Paciente'}" do dia ${dataFormatada}? Esta ação removerá a consulta e todas as mensagens do histórico.`,
+                        confirmText: "Sim, Excluir do Histórico",
+                        cancelText: "Cancelar",
+                        variant: "danger"
+                      });
+                      if (!confirmed) return;
+                      try {
+                        const cId = chatConsultaAtiva.id;
+                        const pId = chatConsultaAtiva.pacienteId;
+                        await remove(ref(db, `consultas/${cId}`));
+                        await remove(ref(db, `chats/consulta_${cId}`));
+                        if (user?.uid) {
+                          await remove(ref(db, `unreadMessages/${user.uid}/consulta_${cId}`));
+                        }
+                        if (pId) {
+                          await remove(ref(db, `unreadMessages/${pId}/consulta_${cId}`));
+                        }
+                        setChatConsultaAtiva(null);
+                        notify.success("Consulta excluída do histórico com sucesso!", "Consulta Excluída");
+                      } catch(err) {
+                        console.error(err);
+                        notify.error("Erro ao excluir consulta.");
+                      }
+                    }}
+                    className="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 hover:border-rose-300 px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                    title="Excluir esta consulta do histórico"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" /> Excluir do Histórico
+                  </button>
+                </div>
               ) : null
             )}
           </div>
@@ -7240,58 +7559,91 @@ function App() {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50 font-sans">
+    <div className="flex h-screen bg-slate-50/70 font-sans">
       
       {/* Sidebar - Desktop */}
-      <aside className="hidden md:flex flex-col w-64 bg-white border-r border-gray-200">
-        <div className="p-6 flex items-center space-x-3 text-green-600">
-          <Utensils className="w-8 h-8" />
-          <span className="text-2xl font-bold text-gray-800 tracking-tight">Nutri<span className="text-green-600">App</span></span>
+      <aside className="hidden md:flex flex-col w-64 bg-white border-r border-slate-200/80 shadow-xs">
+        <div className="p-5 flex items-center justify-between border-b border-slate-100">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white shadow-md shadow-emerald-600/20 shrink-0">
+              <Utensils className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xl font-extrabold text-slate-800 tracking-tight">Nutri<span className="text-emerald-600">App</span></span>
+                <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 uppercase tracking-wider">
+                  {isAdmin ? 'PRO' : 'PACIENTE'}
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400 font-medium">Clínica & Nutrição</p>
+            </div>
+          </div>
         </div>
         
-        <nav className="flex-1 px-4 py-4 space-y-1">
-          {menuItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => {
-                setActiveTab(item.id);
-                setFichaPaciente(null);
-                setRotinaPaciente(null);
-                setChatPaciente(null);
-                setChatConsultaAtiva(null);
-              }}
-              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
-                activeTab === item.id 
-                  ? 'bg-green-50 text-green-700 font-medium' 
-                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-              }`}
-            >
-              <item.icon className={`w-5 h-5 ${activeTab === item.id ? 'text-green-600' : 'text-gray-400'}`} />
-              <span>{item.label}</span>
-            </button>
-          ))}
+        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+          {menuItems.map((item) => {
+            const isActive = activeTab === item.id;
+            const isUnreadChatTab = (item.id === 'pacientes' || item.id === 'chat') && Object.keys(unreadChats).length > 0;
+            const chatCount = Object.keys(unreadChats).length;
+
+            return (
+              <button
+                key={item.id}
+                onClick={() => {
+                  setActiveTab(item.id);
+                  setFichaPaciente(null);
+                  setRotinaPaciente(null);
+                  setChatPaciente(null);
+                  setChatConsultaAtiva(null);
+                }}
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl transition-all duration-150 relative text-sm font-semibold ${
+                  isActive 
+                    ? 'bg-emerald-50 text-emerald-900 shadow-xs border border-emerald-200/60 font-bold' 
+                    : 'text-slate-600 hover:bg-slate-100/70 hover:text-slate-900'
+                }`}
+              >
+                <div className="flex items-center space-x-3">
+                  <item.icon className={`w-5 h-5 transition-colors ${isActive ? 'text-emerald-600' : 'text-slate-400'}`} />
+                  <span>{item.label}</span>
+                </div>
+                {isUnreadChatTab && (
+                  <span className="min-w-[18px] h-[18px] px-1.5 rounded-full text-[10px] font-bold bg-emerald-600 text-white flex items-center justify-center">
+                    {chatCount}
+                  </span>
+                )}
+                {isActive && (
+                  <span className="absolute left-0 top-2 bottom-2 w-1 bg-emerald-600 rounded-r-full"></span>
+                )}
+              </button>
+            );
+          })}
         </nav>
 
         {/* Perfil Mini na Sidebar */}
-        <div className="p-4 border-t border-gray-200">
+        <div className="p-3 m-3 rounded-2xl bg-slate-50 border border-slate-200/70 shadow-xs">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3 overflow-hidden">
-              <div className="w-10 h-10 rounded-full bg-green-200 flex items-center justify-center text-green-700 font-bold shrink-0">
-                {user.email ? user.email.charAt(0).toUpperCase() : 'U'}
+              <div className="relative shrink-0">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white font-bold text-sm shadow-xs">
+                  {user.email ? user.email.charAt(0).toUpperCase() : 'U'}
+                </div>
+                <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full"></span>
               </div>
               <div className="truncate">
-                <p className="text-sm font-medium text-gray-800 truncate" title={userData?.nome || user.email}>
+                <p className="text-xs font-bold text-slate-800 truncate" title={userData?.nome || user.email}>
                   {userData?.nome || user.email}
                 </p>
-                <p className="text-xs text-gray-500">{isAdmin ? 'Nutricionista' : 'Paciente'}</p>
+                <span className="inline-block text-[10px] font-semibold text-slate-500">
+                  {isAdmin ? 'Nutricionista' : 'Paciente'}
+                </span>
               </div>
             </div>
             <button 
               onClick={handleLogout}
-              className="p-2 text-gray-400 hover:text-red-600 transition-colors"
-              title="Sair"
+              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors shrink-0"
+              title="Sair do sistema"
             >
-              <LogOut className="w-5 h-5" />
+              <LogOut className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -7300,18 +7652,27 @@ function App() {
       {/* Sidebar - Mobile (Overlay) */}
       {isMobileMenuOpen && (
         <div className="fixed inset-0 z-50 flex md:hidden">
-          <div className="fixed inset-0 bg-gray-800 bg-opacity-50" onClick={() => setIsMobileMenuOpen(false)}></div>
-          <aside className="relative flex flex-col w-64 bg-white h-full shadow-xl">
-            <div className="p-6 flex justify-between items-center border-b border-gray-200">
-              <div className="flex items-center space-x-2 text-green-600">
-                <Utensils className="w-6 h-6" />
-                <span className="text-xl font-bold text-gray-800">Nutri<span className="text-green-600">App</span></span>
+          <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity" onClick={() => setIsMobileMenuOpen(false)}></div>
+          <aside className="relative flex flex-col w-72 bg-white h-full shadow-2xl animate-modal-in">
+            <div className="p-5 flex justify-between items-center border-b border-slate-100">
+              <div className="flex items-center space-x-3">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white shadow-md shadow-emerald-600/20">
+                  <Utensils className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-lg font-bold text-slate-800">Nutri<span className="text-emerald-600">App</span></span>
+                    <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 uppercase tracking-wider">
+                      {isAdmin ? 'PRO' : 'PACIENTE'}
+                    </span>
+                  </div>
+                </div>
               </div>
-              <button onClick={() => setIsMobileMenuOpen(false)} className="text-gray-500">
-                <X className="w-6 h-6" />
+              <button onClick={() => setIsMobileMenuOpen(false)} className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg">
+                <X className="w-5 h-5" />
               </button>
             </div>
-            <nav className="flex-1 px-4 py-4 space-y-2">
+            <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
               {menuItems.map((item) => (
                 <button
                   key={item.id}
@@ -7323,22 +7684,24 @@ function App() {
                     setChatConsultaAtiva(null);
                     setIsMobileMenuOpen(false);
                   }}
-                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg ${
-                    activeTab === item.id ? 'bg-green-50 text-green-700 font-medium' : 'text-gray-600'
+                  className={`w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
+                    activeTab === item.id 
+                      ? 'bg-emerald-50 text-emerald-800 font-bold border border-emerald-100' 
+                      : 'text-slate-600 hover:bg-slate-50'
                   }`}
                 >
-                  <item.icon className="w-5 h-5" />
+                  <item.icon className={`w-5 h-5 ${activeTab === item.id ? 'text-emerald-600' : 'text-slate-400'}`} />
                   <span>{item.label}</span>
                 </button>
               ))}
               
-              <div className="pt-4 mt-4 border-t border-gray-100">
+              <div className="pt-4 mt-4 border-t border-slate-100">
                 <button
                   onClick={handleLogout}
-                  className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-red-600 hover:bg-red-50 transition-colors font-medium"
+                  className="w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-rose-600 hover:bg-rose-50 transition-colors font-semibold text-sm"
                 >
                   <LogOut className="w-5 h-5" />
-                  <span>Sair do sistema</span>
+                  <span>Sair da conta</span>
                 </button>
               </div>
             </nav>
@@ -7350,23 +7713,26 @@ function App() {
       <main className="flex-1 flex flex-col h-screen overflow-hidden">
         
         {/* Top Header */}
-        <header className="bg-white border-b border-gray-200 h-16 flex items-center justify-between px-4 sm:px-6 z-10">
-          <div className="flex items-center">
+        <header className="glass-header border-b border-slate-200/80 h-16 flex items-center justify-between px-4 sm:px-6 z-20 sticky top-0 shadow-2xs">
+          <div className="flex items-center gap-3">
             <button 
-              className="md:hidden p-2 -ml-2 mr-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+              className="md:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
               onClick={() => setIsMobileMenuOpen(true)}
             >
-              <Menu className="w-6 h-6" />
+              <Menu className="w-5 h-5" />
             </button>
             
             {/* Barra de Busca (Visual) */}
-            <div className="hidden sm:flex items-center bg-gray-100 px-3 py-2 rounded-lg focus-within:ring-2 focus-within:ring-green-500 transition-all">
-              <Search className="w-4 h-4 text-gray-400 mr-2" />
+            <div className="hidden sm:flex items-center bg-slate-100/80 hover:bg-slate-100 px-3.5 py-1.5 rounded-xl border border-transparent focus-within:border-emerald-300 focus-within:bg-white focus-within:ring-2 focus-within:ring-emerald-500/20 transition-all shadow-xs">
+              <Search className="w-4 h-4 text-slate-400 mr-2 shrink-0" />
               <input 
                 type="text" 
-                placeholder="Buscar paciente..." 
-                className="bg-transparent border-none focus:outline-none text-sm text-gray-700 w-64"
+                placeholder={isAdmin ? "Buscar paciente, plano ou consulta..." : "Buscar na plataforma..."} 
+                className="bg-transparent border-none focus:outline-none text-xs text-slate-700 w-60 font-medium placeholder-slate-400"
               />
+              <span className="text-[10px] font-bold text-slate-400 bg-white border border-slate-200 px-1.5 py-0.5 rounded shadow-2xs">
+                ⌘K
+              </span>
             </div>
           </div>
 
@@ -7380,12 +7746,12 @@ function App() {
                   <>
                     <button 
                       onClick={() => setShowNotifications(!showNotifications)}
-                      className="relative p-2 text-gray-400 hover:text-gray-600 transition-colors rounded-xl hover:bg-gray-100"
+                      className="relative p-2 text-slate-500 hover:text-slate-700 transition-colors rounded-xl hover:bg-slate-100"
                       title="Notificações e Avisos"
                     >
-                      <Bell className="w-6 h-6" />
+                      <Bell className="w-5 h-5" />
                       {totalNotifCount > 0 && (
-                        <span className="absolute top-1 right-1 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-extrabold text-white bg-red-500 rounded-full ring-2 ring-white">
+                        <span className="absolute top-1 right-1 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-extrabold text-white bg-rose-500 rounded-full ring-2 ring-white animate-pulse">
                           {totalNotifCount}
                         </span>
                       )}
@@ -7393,22 +7759,22 @@ function App() {
                     
                     {/* Dropdown de Notificações Reais */}
                     {showNotifications && (
-                      <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-2xl shadow-xl border border-gray-100 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
-                        <div className="p-3.5 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-slate-50 flex items-center justify-between">
+                      <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-slate-200/80 z-50 overflow-hidden animate-modal-in">
+                        <div className="p-3.5 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-emerald-50/30 flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <Bell className="w-4 h-4 text-green-600" />
-                            <span className="font-bold text-gray-800 text-sm">Notificações & Avisos</span>
+                            <Bell className="w-4 h-4 text-emerald-600" />
+                            <span className="font-bold text-slate-800 text-sm">Notificações & Avisos</span>
                           </div>
                           {totalNotifCount > 0 ? (
-                            <span className="text-[11px] font-bold bg-green-100 text-green-700 px-2.5 py-0.5 rounded-full">
+                            <span className="text-[11px] font-bold bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full">
                               {totalNotifCount} {totalNotifCount > 1 ? 'pendentes' : 'pendente'}
                             </span>
                           ) : (
-                            <span className="text-[11px] font-medium text-gray-400">0 pendências</span>
+                            <span className="text-[11px] font-medium text-slate-400">0 pendências</span>
                           )}
                         </div>
 
-                        <div className="max-h-80 overflow-y-auto divide-y divide-gray-100">
+                        <div className="max-h-80 overflow-y-auto divide-y divide-slate-100">
                           {/* 1. Mensagens Não Lidas (Reais) */}
                           {Object.keys(unreadChats).length > 0 && (
                             <div 
@@ -7419,8 +7785,8 @@ function App() {
                                 <MessageCircle className="w-4 h-4" />
                               </div>
                               <div className="flex-1 min-w-0">
-                                <p className="text-sm font-semibold text-gray-800">Novas Mensagens</p>
-                                <p className="text-xs text-gray-500">Você tem {Object.keys(unreadChats).length} conversa(s) com novas mensagens.</p>
+                                <p className="text-sm font-semibold text-slate-800">Novas Mensagens</p>
+                                <p className="text-xs text-slate-500">Você tem {Object.keys(unreadChats).length} conversa(s) com novas mensagens.</p>
                               </div>
                             </div>
                           )}
